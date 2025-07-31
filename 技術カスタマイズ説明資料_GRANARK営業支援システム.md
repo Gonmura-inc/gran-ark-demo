@@ -32,16 +32,16 @@
 GRANARK営業支援システム
 
 ### 目的・用途
-株式会社GRANARKの営業活動における顧客管理・商談履歴管理・案件進捗管理を統合的に行うWebベースの業務支援システムです。従来の分散した情報管理体制を改善し、営業スタッフの生産性向上と顧客対応品質の向上を目的として開発いたしました。
+株式会社GRANARKの営業活動における案件情報管理を効率化するWebベースの業務支援システムです。従来のスプレッドシート管理から脱却し、外出先からのスマートフォン入力・更新を可能にすることで、営業活動の生産性向上とリアルタイムな情報共有を実現します。
 
 ### システム概要
-本システムは、不動産業界における営業活動の特性を考慮し、以下の要素を重視して設計されています：
+本システムは、不動産業界における営業案件管理の特性を考慮し、以下の要素を重視して設計されています：
 
-1. **顧客情報の統合管理**: 見込み客から契約済み顧客まで、一元的な顧客データベース
-2. **商談履歴の時系列管理**: 各顧客との接触履歴、商談内容、進捗状況の記録
-3. **ステータス管理**: 営業プロセスの各段階における顧客の状態管理
-4. **チーム連携機能**: 営業スタッフ間での情報共有とコラボレーション支援
-5. **モバイル対応**: 外出先からのリアルタイムアクセスと更新機能
+1. **案件情報の一元管理**: 全営業案件の統合的な管理とステータス追跡
+2. **スプレッドシート連携**: 既存の管理項目を完全移行（案件名、担当者、ステータス、金額、日付等）
+3. **進捗管理機能**: 各案件の進捗度合い（％）による視覚的な管理
+4. **権限管理**: 一般営業担当は自分の案件のみ編集可能な権限制御
+5. **レスポンシブ対応**: PC・スマートフォン・タブレットからの簡単な入力・閲覧
 
 ### アクセス情報
 - **公開URL**: https://granark-sales.web.app/
@@ -64,15 +64,15 @@ GRANARK営業支援システム
 #### 1. 情報管理の現状と課題
 
 **従来の管理方法**
-- 顧客情報：個人のExcelファイルで管理
-- 商談履歴：Slackチャンネル、個人メモ、手書きノートに散在
-- 案件進捗：口頭での情報共有、週次ミーティングでの報告
+- 案件情報：営業担当者ごとの個別スプレッドシートで管理
+- 進捗状況：PC環境に依存し、外出先での更新・参照が困難
+- 情報共有：営業会議での口頭報告、タイムラグのある情報更新
 
 **具体的な課題**
-- **データの重複と不整合**: 同一顧客の情報が複数の場所に存在し、更新時の不整合が発生
-- **検索性の低さ**: Excelファイルでの顧客検索に時間がかかり、営業効率が低下
-- **バックアップ不備**: 個人のPCに保存されたデータのバックアップが不十分
-- **アクセス制限**: 外出先からの顧客情報確認が困難
+- **外出先での更新困難**: スマートフォンからの案件情報入力・更新ができない
+- **情報の抜け漏れ**: 入力遅れによる最新情報の欠如
+- **属人化**: 各営業担当が個別管理し、情報共有が不十分
+- **営業会議の非効率**: リアルタイムデータ不足によるフォローアップ対応の遅れ
 
 #### 2. コミュニケーションの課題
 
@@ -99,10 +99,10 @@ GRANARK営業支援システム
 ### 解決目標と期待効果
 
 #### 1. 情報の一元管理
-**目標**: 顧客・商談情報の統合データベース化
-- 全ての顧客情報を単一のシステムで管理
-- 商談履歴の時系列での一元管理
-- データの一意性確保と整合性維持
+**目標**: 案件情報の統合データベース化
+- スプレッドシート管理内容の完全移行
+- 全案件情報を単一システムで管理
+- 営業ステータス・進捗度の可視化
 
 **期待効果**
 - 情報検索時間の大幅短縮（目標：50%削減）
@@ -628,59 +628,70 @@ class _AnimatedStatsCardState extends State<AnimatedStatsCard>
 
 #### 拡張可能なデータモデル設計
 
-**Customer（顧客）エンティティの詳細設計**
+**Project（案件）エンティティの詳細設計**
 ```dart
-/// 顧客情報を管理するエンティティクラス
-/// 不動産業界の顧客特性を考慮した設計
-class Customer {
-  final String id;              // 一意識別子（UUID v4）
-  final String name;            // 顧客名（姓名）
-  final String email;           // メールアドレス（検証済み）
-  final String phone;           // 電話番号（国際形式対応）
-  final CustomerStatus status;  // 顧客ステータス（enum）
-  final DateTime createdAt;     // 作成日時（UTC）
-  final DateTime lastUpdated;   // 最終更新日時（UTC）
-  final String? company;        // 所属会社名（オプション）
-  final CustomerType type;      // 顧客タイプ（個人/法人）
-  final Address? address;       // 住所情報（オプション）
-  final double? budget;         // 予算情報（オプション）
-  final List<String> tags;      // カスタムタグ（検索・分類用）
-  final String? notes;          // 備考・メモ（自由記述）
+/// 営業案件情報を管理するエンティティクラス
+/// スプレッドシートからの移行項目を完全カバー
+class Project {
+  final String id;                    // 一意識別子（UUID v4）
+  final String projectName;           // 案件名（顧客名・物件名）
+  final String assignedStaff;         // 担当者名
+  final String? supportStaff;         // サポート者
+  final ProjectStatus status;         // 営業ステータス（商談中・入金済・キャンセル等）
+  final double? salesBudget;          // 営業予算
+  final double? decidedAmount;        // 決定額
+  final double? brokerageFee;         // 仲介手数料
+  final DateTime? salesStartDate;     // 営業開始日
+  final DateTime? contractDate;       // 成約日
+  final DateTime? paymentDate;        // 入金日
+  final int progressPercentage;       // 進捗度合い（％）
+  final String? partnerConnection;    // 成果連携先（AD・制作など）
 
-  const Customer({
+  final DateTime createdAt;           // 作成日時（UTC）
+  final DateTime lastUpdated;         // 最終更新日時（UTC）
+
+  const Project({
     required this.id,
-    required this.name,
-    required this.email,
-    required this.phone,
+    required this.projectName,
+    required this.assignedStaff,
+    this.supportStaff,
     required this.status,
+    this.salesBudget,
+    this.decidedAmount,
+    this.brokerageFee,
+    this.salesStartDate,
+    this.contractDate,
+    this.paymentDate,
+    required this.progressPercentage,
+    this.partnerConnection,
     required this.createdAt,
     required this.lastUpdated,
-    required this.type,
-    this.company,
-    this.address,
-    this.budget,
-    this.tags = const [],
-    this.notes,
   });
 
   /// JSON変換用ファクトリーコンストラクタ
-  factory Customer.fromJson(Map<String, dynamic> json) {
-    return Customer(
+  factory Project.fromJson(Map<String, dynamic> json) {
+    return Project(
       id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      status: CustomerStatus.fromString(json['status'] as String),
+      projectName: json['projectName'] as String,
+      assignedStaff: json['assignedStaff'] as String,
+      supportStaff: json['supportStaff'] as String?,
+      status: ProjectStatus.fromString(json['status'] as String),
+      salesBudget: json['salesBudget']?.toDouble(),
+      decidedAmount: json['decidedAmount']?.toDouble(),
+      brokerageFee: json['brokerageFee']?.toDouble(),
+      salesStartDate: json['salesStartDate'] != null 
+        ? DateTime.parse(json['salesStartDate'] as String) 
+        : null,
+      contractDate: json['contractDate'] != null 
+        ? DateTime.parse(json['contractDate'] as String) 
+        : null,
+      paymentDate: json['paymentDate'] != null 
+        ? DateTime.parse(json['paymentDate'] as String) 
+        : null,
+      progressPercentage: json['progressPercentage'] as int,
+      partnerConnection: json['partnerConnection'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastUpdated: DateTime.parse(json['lastUpdated'] as String),
-      type: CustomerType.fromString(json['type'] as String),
-      company: json['company'] as String?,
-      address: json['address'] != null 
-        ? Address.fromJson(json['address'] as Map<String, dynamic>)
-        : null,
-      budget: json['budget']?.toDouble(),
-      tags: List<String>.from(json['tags'] ?? []),
-      notes: json['notes'] as String?,
     );
   }
 
@@ -688,142 +699,77 @@ class Customer {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'email': email,
-      'phone': phone,
+      'projectName': projectName,
+      'assignedStaff': assignedStaff,
+      'supportStaff': supportStaff,
       'status': status.value,
+      'salesBudget': salesBudget,
+      'decidedAmount': decidedAmount,
+      'brokerageFee': brokerageFee,
+      'salesStartDate': salesStartDate?.toIso8601String(),
+      'contractDate': contractDate?.toIso8601String(),
+      'paymentDate': paymentDate?.toIso8601String(),
+      'progressPercentage': progressPercentage,
+      'partnerConnection': partnerConnection,
       'createdAt': createdAt.toIso8601String(),
       'lastUpdated': lastUpdated.toIso8601String(),
-      'type': type.value,
-      'company': company,
-      'address': address?.toJson(),
-      'budget': budget,
-      'tags': tags,
-      'notes': notes,
     };
   }
 
-  /// 顧客情報の更新（イミュータブル設計）
-  Customer copyWith({
-    String? name,
-    String? email,
-    String? phone,
-    CustomerStatus? status,
-    String? company,
-    Address? address,
-    double? budget,
-    List<String>? tags,
-    String? notes,
+  /// 案件情報の更新（イミュータブル設計）
+  Project copyWith({
+    String? projectName,
+    String? assignedStaff,
+    String? supportStaff,
+    ProjectStatus? status,
+    double? salesBudget,
+    double? decidedAmount,
+    double? brokerageFee,
+    DateTime? salesStartDate,
+    DateTime? contractDate,
+    DateTime? paymentDate,
+    int? progressPercentage,
+    String? partnerConnection,
   }) {
-    return Customer(
+    return Project(
       id: id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
+      projectName: projectName ?? this.projectName,
+      assignedStaff: assignedStaff ?? this.assignedStaff,
+      supportStaff: supportStaff ?? this.supportStaff,
       status: status ?? this.status,
+      salesBudget: salesBudget ?? this.salesBudget,
+      decidedAmount: decidedAmount ?? this.decidedAmount,
+      brokerageFee: brokerageFee ?? this.brokerageFee,
+      salesStartDate: salesStartDate ?? this.salesStartDate,
+      contractDate: contractDate ?? this.contractDate,
+      paymentDate: paymentDate ?? this.paymentDate,
+      progressPercentage: progressPercentage ?? this.progressPercentage,
+      partnerConnection: partnerConnection ?? this.partnerConnection,
       createdAt: createdAt,
       lastUpdated: DateTime.now(),
-      type: type,
-      company: company ?? this.company,
-      address: address ?? this.address,
-      budget: budget ?? this.budget,
-      tags: tags ?? this.tags,
-      notes: notes ?? this.notes,
     );
   }
 }
 
-/// 顧客ステータス列挙型
-enum CustomerStatus {
-  prospect('見込み客'),
+/// 案件ステータス列挙型
+enum ProjectStatus {
   negotiating('商談中'),
-  contract('契約済み'),
-  existing('既存客'),
-  inactive('非アクティブ');
+  contracted('成約'),
+  paid('入金済'),
+  cancelled('キャンセル'),
+  pending('保留'),
+  followUp('フォロー中');
 
-  const CustomerStatus(this.displayName);
+  const ProjectStatus(this.displayName);
   final String displayName;
   
   String get value => name;
   
-  static CustomerStatus fromString(String value) {
-    return CustomerStatus.values.firstWhere(
+  static ProjectStatus fromString(String value) {
+    return ProjectStatus.values.firstWhere(
       (status) => status.name == value,
     );
   }
-}
-
-/// 顧客タイプ列挙型
-enum CustomerType {
-  individual('個人'),
-  corporate('法人');
-
-  const CustomerType(this.displayName);
-  final String displayName;
-  
-  String get value => name;
-  
-  static CustomerType fromString(String value) {
-    return CustomerType.values.firstWhere(
-      (type) => type.name == value,
-    );
-  }
-}
-```
-
-**Deal（商談）エンティティの詳細設計**
-```dart
-/// 商談・案件情報を管理するエンティティクラス
-class Deal {
-  final String id;              // 一意識別子
-  final String customerId;      // 関連顧客ID（外部キー）
-  final DateTime scheduledDate; // 商談予定日時
-  final DateTime? actualDate;   // 実際の商談日時
-  final String title;           // 商談タイトル
-  final String description;     // 商談詳細・議事録
-  final DealStatus status;      // 商談ステータス
-  final DealType type;          // 商談種別
-  final String assignedStaff;   // 担当営業スタッフ
-  final Priority priority;      // 優先度
-  final double? estimatedValue; // 予想取引額
-  final DateTime? followUpDate; // 次回フォロー予定日
-  final List<String> attendees; // 参加者リスト
-  final List<Attachment> attachments; // 添付ファイル
-  final DateTime createdAt;     // 作成日時
-  final DateTime lastUpdated;   // 最終更新日時
-
-  const Deal({
-    required this.id,
-    required this.customerId,
-    required this.scheduledDate,
-    required this.title,
-    required this.description,
-    required this.status,
-    required this.type,
-    required this.assignedStaff,
-    required this.priority,
-    required this.createdAt,
-    required this.lastUpdated,
-    this.actualDate,
-    this.estimatedValue,
-    this.followUpDate,
-    this.attendees = const [],
-    this.attachments = const [],
-  });
-
-  // JSON変換メソッドやビジネスロジックメソッドは省略
-}
-
-/// 商談ステータス列挙型
-enum DealStatus {
-  scheduled('予定'),
-  inProgress('進行中'),
-  completed('完了'),
-  postponed('延期'),
-  cancelled('キャンセル');
-
-  const DealStatus(this.displayName);
-  final String displayName;
 }
 ```
 
@@ -943,24 +889,24 @@ class ResponsiveLayout extends StatelessWidget {
 ## 🖥️ システムの主要機能
 
 ### 1. ダッシュボード機能
-- **概要表示**: 営業活動の全体像を一画面で把握
-- **ステータス分析**: 顧客段階別の数値・グラフ表示
-- **最新情報**: 直近の商談活動・重要な通知
+- **案件概要表示**: 全営業案件の状況を一画面で把握
+- **ステータス分析**: 商談中・入金済・キャンセル等の案件状況をグラフ表示
+- **進捗度一覧**: 各案件の進捗度合い（％）を視覚的に表示
 
-### 2. 顧客管理機能
-- **顧客一覧**: カード形式での見やすい表示
-- **検索・フィルタ**: ステータス・名前での絞り込み
-- **詳細情報**: 連絡先・商談履歴の統合表示
-- **編集機能**: 顧客情報の追加・更新
+### 2. 案件管理機能
+- **案件一覧**: 案件名（顧客名・物件名）をカード形式で表示
+- **絞り込み・検索**: 担当者別、営業ステータス別、月別、フリーワード検索
+- **詳細情報表示**: 金額（営業予算、決定額、仲介手数料）、日付（営業開始日、成約日、入金日）
+- **新規登録・編集**: モバイル端末に最適化された入力フォーム
 
-### 3. 商談履歴管理
-- **時系列表示**: 商談の流れを時間順で確認
-- **詳細記録**: 商談内容・次回アクション・担当者
-- **ステータス管理**: 対応中・完了・保留などの進捗管理
-- **顧客紐付け**: 顧客ごとの商談履歴集約
+### 3. 権限管理機能
+- **アカウント発行**: 営業担当者ごとのログインアカウント作成
+- **操作範囲制限**: 一般営業担当は自分の案件のみ編集可能
+- **サポート者設定**: 案件ごとのサポート担当者設定
 
-### 4. レポート・分析
-- **活動サマリー**: 期間別の営業活動統計
+### 4. 連携・分析機能
+- **成果連携先管理**: AD・制作などの連携先情報記録
+- **案件統計分析**: 月別・担当者別の案件数・金額分析
 - **成約率分析**: ステータス遷移の可視化
 - **担当者別実績**: スタッフごとの活動量・成果
 
@@ -1018,19 +964,19 @@ Widget build(BuildContext context) {
 ## 📈 導入効果と業務改善
 
 ### 定量的効果
-- **情報検索時間**: 50%削減（従来のExcel検索と比較）
-- **データ入力効率**: 30%向上（重複入力の排除）
-- **チーム共有速度**: リアルタイム化実現
+- **外出先からの案件更新**: スマートフォンからの即時入力・更新が可能
+- **情報検索時間**: 50%削減（従来のスプレッドシート検索と比較）
+- **営業会議の効率化**: リアルタイムデータによる精度向上
 
 ### 定性的効果
-- **属人化解消**: 誰でも顧客情報にアクセス可能
-- **対応品質向上**: 過去の商談履歴を基にした適切な対応
-- **モバイル対応**: 外出先からの情報確認・更新
+- **属人化解消**: 案件情報のチーム全体での共有
+- **入力遅れ防止**: 外出先からの即時更新で情報の鮮度保持
+- **フォローアップ対応**: 進捗度管理による適切なタイミングでの対応
 
 ### 具体的な業務改善例
-1. **商談前準備**: 顧客情報・過去履歴の事前確認が容易
-2. **チーム連携**: スタッフ間での進捗共有・引き継ぎの円滑化
-3. **管理業務**: 営業活動の可視化・分析による戦略立案支援
+1. **案件情報の一元管理**: 全案件を統一フォーマットで管理
+2. **権限制御**: 一般営業担当は自分の案件のみ編集可能でセキュリティ向上
+3. **成果の可視化**: 進捗度・金額・ステータスの統計分析
 
 ---
 
@@ -1054,18 +1000,18 @@ Widget build(BuildContext context) {
 - セキュリティレベルの大幅向上
 - チーム作業効率の向上
 
-### Phase 3: AI・機械学習統合（2026年7月予定）
+### Phase 3: 高度な分析機能拡張（2026年7月予定）
 
-#### 高度な分析・予測機能
+#### 案件分析・レポート機能
 **ダッシュボード拡張**
-- **インタラクティブチャート**: Chart.js/D3.js統合による動的グラフ
-- **リアルタイム分析**: 営業活動の即座可視化
-- **カスタムダッシュボード**: ユーザー別の表示項目カスタマイズ
+- **インタラクティブチャート**: 案件ステータス・金額の動的グラフ表示
+- **リアルタイム分析**: 進捗度・成約率の即座可視化
+- **カスタムレポート**: 営業会議用の自動レポート生成
 
-**AI予測分析機能**
-- **成約確率予測**: 機械学習による商談成功率算出
-- **顧客ライフサイクル分析**: 購買行動パターンの自動分析
-- **最適営業タイミング**: AIによる最適フォローアップ時期提案
+**予測分析機能**
+- **成約予測**: 進捗度・ステータスを基にした成約確率算出
+- **業績予測**: 月別・四半期別の売上予測
+- **ボトルネック分析**: 停滞案件の自動検出とアラート
 
 **自動化機能**
 - **自動レポート生成**: 定期的な営業活動サマリー自動作成
@@ -1444,14 +1390,14 @@ class Logger {
 - **年間削減効果**: 345,000円 × 12ヶ月 = 4,140,000円/年
 
 #### 売上向上効果
-**営業効率向上**
-- **商談成約率向上**: 従来15% → 改善後20%（+5%）
-- **顧客対応スピード向上**: 平均対応時間30%短縮
-- **機会損失削減**: フォローアップ漏れ削減による売上機会確保
+**案件管理の効率化による効果**
+- **案件進捗管理**: 進捗度の可視化による適切なフォローアップ
+- **リアルタイム情報共有**: 営業会議での迅速な意思決定
+- **外出先更新**: 情報の鮮度向上による機会損失防止
 
 **定量的売上効果**
-- **月間商談数**: 50件
-- **成約率向上**: 5%（2.5件/月の増加）
+- **月間案件数**: 50件
+- **成約率向上**: 適切なフォローにより5%向上（2.5件/月の増加）
 - **平均取引額**: 500万円
 - **月間売上増加**: 2.5件 × 500万円 = 1,250万円
 - **年間売上増加**: 1,250万円 × 12ヶ月 = 1億5,000万円
@@ -1528,25 +1474,6 @@ ROI = (153,888,000 - 3,250,000) ÷ 3,250,000 × 100 = 4,635%
 #### 3. 雇用創出・人材育成効果
 システム導入により業務効率化が実現し、より高付加価値な業務への人材シフトが可能となりました。また、デジタルスキルの向上により、従業員のキャリア発展も支援されています。
 
-### 今後の継続的改善計画
-
-#### 短期目標（6ヶ月）
-- **ユーザーフィードバック収集**: 実際の運用データに基づく改善
-- **機能追加**: 要望の高い機能の段階的実装
-- **パフォーマンス最適化**: レスポンス時間のさらなる短縮
-
-#### 中長期目標（1-2年）
-- **AI機能統合**: 機械学習による予測分析機能
-- **モバイルアプリ展開**: ネイティブアプリによる機能拡張
-- **他部門展開**: 人事・経理部門への水平展開
-
-### 最終評価
-
-本プロジェクトは、技術的な成功だけでなく、ビジネス価値の創造においても大きな成果を上げています。投資対効果は4,635%という圧倒的な数値を示し、単なるシステム導入を超えた事業変革を実現しました。
-
-株式会社GRANARK様の営業活動は、このシステム導入により根本的に改善され、持続的な成長基盤が確立されました。今後も継続的な機能拡張を通じて、更なる業務改善と競争力強化を目指してまいります。
-
----
 
 **報告書作成者**  
 システム開発担当: 株式会社Gonmura 吉田光輝  
